@@ -1,0 +1,36 @@
+# Environment
+.env
+.env.local
+
+# OAuth credentials and tokens
+tokens/*.json
+client_secrets*.json
+client_secret*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
