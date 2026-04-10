@@ -139,7 +139,44 @@ class TikTokAuthManager:
         redirect_parsed = urllib.parse.urlparse(self.redirect_uri)
         port = redirect_parsed.port or 8080
 
-        server = HTTPServer(("localhost", port), _CallbackHandler)
+        try:
+            server = HTTPServer(("localhost", port), _CallbackHandler)
+        except OSError:
+            # Windows Firewall may block binding to this port.
+            # Fall back to manual code entry.
+            logger.warning(
+                "Could not start local callback server on port "
+                f"{port} (likely blocked by Windows Firewall).\n"
+                "Switching to manual authorization.\n"
+                f"Open this URL in your browser:\n  {auth_url}\n"
+                "After approving, TikTok will redirect to your redirect URI.\n"
+                "Copy the 'code' value from the URL and paste it below."
+            )
+            code = input("Paste the authorization code here: ").strip()
+            if not code:
+                raise RuntimeError("No authorization code provided.")
+            logger.info("TikTok authorization code received. Exchanging for tokens…")
+            resp = requests.post(
+                TIKTOK_TOKEN_URL,
+                data={
+                    "client_key": self.client_key,
+                    "client_secret": self.client_secret,
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": self.redirect_uri,
+                    "code_verifier": code_verifier,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("error"):
+                raise RuntimeError(
+                    f"TikTok token exchange failed: {data.get('error_description', data['error'])}"
+                )
+            return self._normalize_token_data(data)
+
         server_thread = Thread(target=server.handle_request, daemon=True)
         server_thread.start()
 

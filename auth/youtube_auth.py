@@ -71,7 +71,17 @@ class YouTubeAuthManager:
         flow = InstalledAppFlow.from_client_secrets_file(
             self.client_secrets_path, scopes=SCOPES
         )
-        creds = flow.run_local_server(port=0, open_browser=True)
+        try:
+            creds = flow.run_local_server(port=8080, open_browser=True)
+        except OSError:
+            # Windows Firewall often blocks the local callback server.
+            # Fall back to manual copy-paste flow instead.
+            logger.warning(
+                "Could not start local callback server (likely blocked by Windows Firewall).\n"
+                "Switching to manual authorization — a URL will be printed below.\n"
+                "Open it in your browser, approve access, then paste the code here."
+            )
+            creds = flow.run_console()
         logger.info("YouTube authorization successful.")
         return creds
 
