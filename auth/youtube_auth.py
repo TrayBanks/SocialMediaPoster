@@ -79,7 +79,10 @@ class YouTubeAuthManager:
         token_file = Path(self.token_path)
         token_file.parent.mkdir(parents=True, exist_ok=True)
         token_file.write_text(creds.to_json(), encoding="utf-8")
-        os.chmod(self.token_path, 0o600)
+        try:
+            os.chmod(self.token_path, 0o600)  # Restrict to owner only (Unix/Mac)
+        except (NotImplementedError, OSError):
+            pass  # Windows does not support Unix-style file permissions
         logger.info(f"YouTube token saved to '{self.token_path}'.")
 
     def _load_token(self) -> Credentials | None:

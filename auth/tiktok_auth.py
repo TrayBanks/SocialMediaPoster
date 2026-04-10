@@ -218,7 +218,10 @@ class TikTokAuthManager:
         token_file = Path(self.token_path)
         token_file.parent.mkdir(parents=True, exist_ok=True)
         token_file.write_text(json.dumps(token_data, indent=2), encoding="utf-8")
-        os.chmod(self.token_path, 0o600)
+        try:
+            os.chmod(self.token_path, 0o600)  # Restrict to owner only (Unix/Mac)
+        except (NotImplementedError, OSError):
+            pass  # Windows does not support Unix-style file permissions
         logger.info(f"TikTok token saved to '{self.token_path}'.")
 
     def _load_token(self) -> dict | None:
