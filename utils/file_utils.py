@@ -68,3 +68,40 @@ def get_mime_type(path: str) -> str:
 def chunk_count(file_size: int, chunk_size: int) -> int:
     """Return the number of chunks needed to upload a file."""
     return math.ceil(file_size / chunk_size)
+
+
+# Filenames auto-detected when no --metadata-file is provided
+_METADATA_NAMES = ["meta.yaml", "meta.yml", "meta.json"]
+
+# Filenames auto-detected when no --thumbnail is provided
+_THUMBNAIL_NAMES = [
+    "thumbnail.jpg", "thumbnail.jpeg", "thumbnail.png", "thumbnail.webp",
+    "thumb.jpg",     "thumb.jpeg",     "thumb.png",     "thumb.webp",
+    "cover.jpg",     "cover.jpeg",     "cover.png",     "cover.webp",
+]
+
+
+def find_metadata_file(video_path: str) -> str | None:
+    """
+    Look for a metadata file alongside the video.
+    Returns the first match from _METADATA_NAMES, or None if none found.
+    """
+    folder = Path(video_path).parent
+    for name in _METADATA_NAMES:
+        candidate = folder / name
+        if candidate.exists():
+            return str(candidate)
+    return None
+
+
+def find_thumbnail_file(video_path: str) -> str | None:
+    """
+    Look for a thumbnail image alongside the video.
+    Returns the first match from _THUMBNAIL_NAMES, or None if none found.
+    """
+    folder = Path(video_path).parent
+    for name in _THUMBNAIL_NAMES:
+        candidate = folder / name
+        if candidate.exists():
+            return str(candidate)
+    return None

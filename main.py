@@ -185,23 +185,45 @@ def cmd_upload(args) -> None:
         parse_metadata_file,
         parse_schedule,
     )
-    from utils.file_utils import validate_thumbnail_file, validate_video_file
+    from utils.file_utils import (
+        find_metadata_file,
+        find_thumbnail_file,
+        validate_thumbnail_file,
+        validate_video_file,
+    )
 
     # ── Validate video file ────────────────────────────────────────────────────
     validate_video_file(args.video)
 
+    # ── Auto-detect metadata file if not explicitly provided ──────────────────
+    metadata_file = args.metadata_file
+    if not metadata_file:
+        metadata_file = find_metadata_file(args.video)
+        if metadata_file:
+            logger.info(f"Auto-detected metadata file: '{metadata_file}'")
+
     # ── Build metadata ─────────────────────────────────────────────────────────
     cli_meta = parse_cli_metadata(args)
 
-    if args.metadata_file:
-        file_meta = parse_metadata_file(args.metadata_file)
+    if metadata_file:
+        file_meta = parse_metadata_file(metadata_file)
         metadata = merge_metadata(file_meta, cli_meta)
     else:
         metadata = cli_meta
 
     if not metadata.title:
-        logger.error("A video title is required. Use --title or provide it in --metadata-file.")
+        logger.error(
+            "No title found. Add --title, or put a meta.yaml/meta.json "
+            "file next to your video."
+        )
         sys.exit(1)
+
+    # ── Auto-detect thumbnail if not explicitly provided ──────────────────────
+    if not metadata.thumbnail_path:
+        auto_thumb = find_thumbnail_file(args.video)
+        if auto_thumb:
+            metadata.thumbnail_path = auto_thumb
+            logger.info(f"Auto-detected thumbnail: '{auto_thumb}'")
 
     if metadata.thumbnail_path:
         validate_thumbnail_file(metadata.thumbnail_path)
