@@ -81,7 +81,28 @@ _THUMBNAIL_NAMES = [
 ]
 
 
-def find_metadata_file(video_path: str) -> str | None:
+def find_latest_video(folder: str) -> str | None:
+    """
+    Return the most recently modified video file in the given folder, or None.
+    Checks for all supported video extensions.
+    """
+    extensions = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".mpeg", ".mpg", ".3gp", ".flv"}
+    folder_path = Path(folder)
+    if not folder_path.is_dir():
+        raise ValueError(f"Folder not found: '{folder}'")
+
+    videos = [
+        f for f in folder_path.iterdir()
+        if f.is_file() and f.suffix.lower() in extensions
+    ]
+
+    if not videos:
+        return None
+
+    return str(max(videos, key=lambda f: f.stat().st_mtime))
+
+
+
     """
     Look for a metadata file alongside the video.
     Returns the first match from _METADATA_NAMES, or None if none found.

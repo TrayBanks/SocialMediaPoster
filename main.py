@@ -71,9 +71,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     upload_p.add_argument(
         "--video",
-        required=True,
         metavar="PATH",
         help="Path to the video file to upload.",
+    )
+    upload_p.add_argument(
+        "--folder",
+        metavar="PATH",
+        help="Path to a folder. The script will pick the most recently modified "
+             "video file inside it and auto-detect meta.yaml and thumbnail.",
     )
     upload_p.add_argument(
         "--platforms",
@@ -186,11 +191,31 @@ def cmd_upload(args) -> None:
         parse_schedule,
     )
     from utils.file_utils import (
+        find_latest_video,
         find_metadata_file,
         find_thumbnail_file,
         validate_thumbnail_file,
         validate_video_file,
     )
+
+    # ── Resolve video path (--folder picks the newest video automatically) ─────
+    if args.folder and args.video:
+        logger.error("Use either --video or --folder, not both.")
+        sys.exit(1)
+
+    if args.folder:
+        video_path = find_latest_video(args.folder)
+        if not video_path:
+            logger.error(f"No video files found in folder: '{args.folder}'")
+            sys.exit(1)
+        logger.info(f"Auto-selected video: '{video_path}'")
+    elif args.video:
+        video_path = args.video
+    else:
+        logger.error("Provide either --video or --folder.")
+        sys.exit(1)
+
+    args.video = video_path
 
     # ── Validate video file ────────────────────────────────────────────────────
     validate_video_file(args.video)
